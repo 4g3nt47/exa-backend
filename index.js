@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const MongoStore = require('connect-mongo');
 const userRoute = require('./routes/user');
 const {User, setupSession} = require('./models/user');
+const courseRoute = require('./routes/course');
 
 // Our env vars, from .env file.
 const DB_URL = process.env.DB_URL;
@@ -38,7 +39,7 @@ app.use(async (req, res, next) => {
   if (req.session.loggedIn){
     try{
       const user = await User.findOne({username: req.session.username});
-      setupSession(session, user);
+      setupSession(req.session, user);
     }catch(error){
       console.log(error);
       req.session.destroy();
@@ -50,18 +51,28 @@ app.use(async (req, res, next) => {
 });
 
 app.use("/user", userRoute);
+app.use("/course", courseRoute);
 
 app.all("*", (req, res) => {
   return res.status(404).json({"error": "Invalid endpoint!"});
-})
+});
+
+app.use((error, req, res, next) => {
+  console.log(error);
+  return res.status(500).json({error: error.message});
+});
+
+const output = (msg) => {
+  console.log(`[${new Date().toLocaleTimeString()}]  ${msg}`);
+};
 
 // Connect to backend database.
-console.log("[*] Connecting to backend database...");
+output("Connecting to backend database...");
 mongoose.connect(DB_URL).then(() => {
-  console.log("[*] Starting server...");
+  output("Starting server...");
   app.listen(PORT, () => {
-    console.log("[+] Server started!");
+    output("Server started!");
   });
 }).catch(error => {
-  console.log(`[-] Connection error: ${error.message}`);
+  output(`Connection error: ${error.message}`);
 });

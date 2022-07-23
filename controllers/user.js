@@ -1,4 +1,3 @@
-const ObjectId = require('mongoose').Types.ObjectId;
 const model = require('../models/user');
 
 exports.registerUser = (req, res) => {
@@ -31,7 +30,5 @@ exports.userProfile = (req, res) => {
 
   if (req.session.loggedIn !== true)
     return res.status(403).json({error: "Permission denied!"});
-  const user = req.session.user;
-  delete user.password;
-  return res.json(user);
+  return res.json(req.session.user);
 };

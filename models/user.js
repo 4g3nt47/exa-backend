@@ -70,6 +70,6 @@ exports.setupSession = (session, user) => {
 
   session.username = user.username;
   session.loggedIn = true;
-  session.isAdmin = user.admin;
+  session.admin = user.admin;
   session.user = user;
 };
