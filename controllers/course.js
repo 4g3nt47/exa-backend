@@ -19,3 +19,23 @@ exports.getCourse = (req, res) => {
     return res.status(403).json({error: error.message});
   });
 };
+
+exports.getCourseList = (req, res) => {
+
+  model.getCourseList().then(data => {
+    return res.json(data);
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
+};
+
+exports.deleteCourse = (req, res) => {
+  
+  if (req.session.admin !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  model.deleteCourse(req.params.id).then(() => {
+    return res.json({success: "Course deleted!"});
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
+};

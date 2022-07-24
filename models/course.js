@@ -19,13 +19,29 @@ const courseSchema = mongoose.Schema({
     type: Number,
     required: true
   },
-  questions:{
-    type: Object,
-    required: true,
-    default: []
-  },
-  questionsCount:{
+  password:{
     type: String,
+    required: true,
+    default: "null"
+  },
+  questions:[
+    {
+      question:{
+        type: String,
+        required: true
+      },
+      options:{
+        type: Object,
+        required: true
+      },
+      answer:{
+        type: Number,
+        required: true
+      }
+    }
+  ],
+  questionsCount:{
+    type: Number,
     required: true,
     default: 0
   },
@@ -40,13 +56,21 @@ const courseSchema = mongoose.Schema({
   }
 });
 
+courseSchema.methods.setPassword = async function(password){
+  this.password = await bcrypt.hash(password, 10);
+};
+
+courseSchema.methods.isProtected = function(){
+  return (this.password !== "null");
+};
+
 const Course = mongoose.model('courses', courseSchema);
 exports.Course = Course;
 
 exports.createCourse = async (data) => {
 
   let {
-    name, title, releaseDate, questions, questionsCount, passingScore, duration
+    name, title, releaseDate, questions, questionsCount, passingScore, duration, password
   } = data;
   name = name.toString().trim();
   title = title.toString().trim();
@@ -54,6 +78,8 @@ exports.createCourse = async (data) => {
   passingScore = parseInt(passingScore);
   if (name.length < 3 || name.length > 30)
     throw new Error("Invalid course name");
+  if (await Course.findOne({name}))
+    throw new Error("Course with the given name already exists!");
   if (title.length < 5 || title.length > 100)
     throw new Error("Invalid course title!");
   if (typeof(questions) !== "object")
@@ -64,6 +90,8 @@ exports.createCourse = async (data) => {
     name, title, releaseDate, questions, questionsCount, passingScore, duration
   });
   course.creationDate = Date.now();
+  if (password)
+    await course.setPassword(password);
   await course.save();
   return true;
 };
@@ -72,6 +100,50 @@ exports.getCourse = async (id) => {
 
   if (!ObjectId.isValid(id))
     throw new Error("Invalid ID");
-  return await Course.findOne({_id: new ObjectId(id)});
+  const course = await Course.findOne({_id: new ObjectId(id)});
+  if (!course)
+    throw new Error("Invalid course!");
+  let data = {
+    id: course._id,
+    name: course.name,
+    title: course.title,
+    password: course.isProtected(),
+    creationDate: course.creationDate,
+    releaseDate: course.releaseDate,
+    questions: course.questionsCount,
+    passingScore: course.passingScore,
+    duration: course.duration
+  };
+  return data;
 };
 
+exports.getCourseList = async () => {
+
+  const courses = await Course.find({});
+  const result = [];
+  for (let course of courses){
+    let data = {
+      id: course._id,
+      name: course.name,
+      title: course.title,
+      password: course.isProtected(),
+      creationDate: course.creationDate,
+      releaseDate: course.releaseDate,
+      questions: course.questionsCount,
+      passingScore: course.passingScore,
+      duration: course.duration
+    };
+    result.push(data);
+  }
+  return result;
+};
+
+exports.deleteCourse = async (id) => {
+
+  if (!ObjectId.isValid(id))
+    throw new Error("Invalid ID!");
+  const result = await Course.deleteOne({_id: new ObjectId(id)});
+  if (result.deletedCount === 0)
+    throw new Error("Invalid course!");
+  return result;
+};

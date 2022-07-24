@@ -21,7 +21,6 @@ exports.loginUser = (req, res) => {
     model.setupSession(req.session, user);
     return res.json({success: "Authentication successful!"});
   }).catch(error => {
-    console.log(error);
     return res.status(403).json({error: error.message});
   });
 };
@@ -30,5 +29,6 @@ exports.userProfile = (req, res) => {
 
   if (req.session.loggedIn !== true)
     return res.status(403).json({error: "Permission denied!"});
+  req.session.user.password = undefined; // Remove the password
   return res.json(req.session.user);
 };

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 const bcrypt = require("bcrypt");
 const validator = require("validator");
 
@@ -16,11 +17,26 @@ const userSchema = mongoose.Schema({
     required: true,
     default: false
   },
-  courses: {
-    type: Object,
-    required: true,
-    default: []
-  }
+  results: [
+    {
+      id:{
+        type: ObjectId,
+        required: true
+      },
+      date:{
+        type: Number,
+        required: true
+      },
+      score:{
+        type: Number,
+        required: true
+      },
+      passed:{
+        type: Boolean,
+        required: true
+      }
+    }
+  ]
 });
 
 userSchema.methods.setPassword = async function(password){

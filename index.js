@@ -4,6 +4,7 @@ const express = require('express');
 const session = require('express-session');
 const mongoose = require('mongoose');
 const MongoStore = require('connect-mongo');
+const cors = require('cors');
 const userRoute = require('./routes/user');
 const {User, setupSession} = require('./models/user');
 const courseRoute = require('./routes/course');
@@ -12,11 +13,16 @@ const courseRoute = require('./routes/course');
 const DB_URL = process.env.DB_URL;
 const PORT = process.env.PORT || 3000;
 const SECRET = process.env.SECRET || '83efd82860b876e9dec01e9b930ec4250fbbc23bb548fcde4e691f430da845d9';
+const ORIGIN_URL = process.env.ORIGIN_URL || 'http://localhost:8000';
 
 // Initallize the API.
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
+
+app.use(cors({
+  origin: ORIGIN_URL
+}));
 
 app.use(session({
   secret: SECRET,
