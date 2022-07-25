@@ -18,8 +18,9 @@ exports.loginUser = (req, res) => {
   if (!(username && password))
     return res.status(404).json({error: "Required params not defined!"});
   model.loginUser(username, password).then(user => {
+    user.password = undefined;
     model.setupSession(req.session, user);
-    return res.json({success: "Authentication successful!"});
+    return res.json(user);
   }).catch(error => {
     return res.status(403).json({error: error.message});
   });
