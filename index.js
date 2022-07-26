@@ -25,6 +25,8 @@ app.use(cors({
   credentials: true
 }));
 
+app.use("/static", express.static("./static"));
+
 app.use(session({
   secret: SECRET,
   resave: true,
