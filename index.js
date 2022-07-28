@@ -1,13 +1,14 @@
 // Imports
-require('dotenv').config();
-const express = require('express');
-const session = require('express-session');
-const mongoose = require('mongoose');
-const MongoStore = require('connect-mongo');
-const cors = require('cors');
-const userRoute = require('./routes/user');
-const {User, setupSession} = require('./models/user');
-const courseRoute = require('./routes/course');
+import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
+import session from 'express-session';
+import mongoose from 'mongoose';
+import MongoStore from 'connect-mongo';
+import cors from 'cors';
+import userRoute from './routes/user.js';
+import User, {setupSession} from './models/user.js';
+import courseRoute from './routes/course.js';
 
 // Our env vars, from .env file.
 const DB_URL = process.env.DB_URL;

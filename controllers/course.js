@@ -1,6 +1,6 @@
-const model = require('../models/course');
+import model from '../models/course.js';
 
-exports.createCourse = (req, res) => {
+export const createCourse = (req, res) => {
 
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
@@ -11,7 +11,7 @@ exports.createCourse = (req, res) => {
   });
 };
 
-exports.getCourse = (req, res) => {
+export const getCourse = (req, res) => {
 
   model.getCourse(req.params.id).then(course => {
     return res.json(course);
@@ -20,7 +20,7 @@ exports.getCourse = (req, res) => {
   });
 };
 
-exports.getCourseList = (req, res) => {
+export const getCourseList = (req, res) => {
 
   model.getCourseList().then(data => {
     return res.json(data);
@@ -29,7 +29,7 @@ exports.getCourseList = (req, res) => {
   });
 };
 
-exports.deleteCourse = (req, res) => {
+export const deleteCourse = (req, res) => {
   
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});

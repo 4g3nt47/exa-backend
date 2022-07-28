@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
-const bcrypt = require('bcrypt');
+import bcrypt from 'bcrypt';
 
 const courseSchema = mongoose.Schema({
   name:{
@@ -65,9 +65,9 @@ courseSchema.methods.isProtected = function(){
 };
 
 const Course = mongoose.model('courses', courseSchema);
-exports.Course = Course;
+export default Course;
 
-exports.createCourse = async (data) => {
+export const createCourse = async (data) => {
 
   let {
     name, title, releaseDate, questions, questionsCount, passingScore, duration, password
@@ -96,7 +96,7 @@ exports.createCourse = async (data) => {
   return true;
 };
 
-exports.getCourse = async (id) => {
+export const getCourse = async (id) => {
 
   if (!ObjectId.isValid(id))
     throw new Error("Invalid ID");
@@ -117,7 +117,7 @@ exports.getCourse = async (id) => {
   return data;
 };
 
-exports.getCourseList = async () => {
+export const getCourseList = async () => {
 
   const courses = await Course.find({});
   const result = [];
@@ -138,7 +138,7 @@ exports.getCourseList = async () => {
   return result;
 };
 
-exports.deleteCourse = async (id) => {
+export const deleteCourse = async (id) => {
 
   if (!ObjectId.isValid(id))
     throw new Error("Invalid ID!");

@@ -1,7 +1,8 @@
-const router = require('express').Router();
-const {
+import {Router} from 'express';
+const router = Router();
+import {
   createCourse, getCourse, getCourseList, deleteCourse
-} = require('../controllers/course');
+} from '../controllers/course.js';
 
 router.post("/create", createCourse);
 
@@ -11,4 +12,4 @@ router.get("/:id", getCourse);
 
 router.delete("/:id", deleteCourse);
 
-module.exports = router;
+export default router;

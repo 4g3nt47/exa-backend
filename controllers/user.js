@@ -1,9 +1,11 @@
-require('dotenv').config();
-const fs = require('fs');
-const crypto = require('crypto');
-const path = require('path');
-const multer = require('multer')
-const model = require('../models/user');
+import dotenv from 'dotenv';
+dotenv.config();
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import multer from 'multer';
+import {fileTypeFromFile} from 'file-type';
+import * as model from '../models/user.js';
 
 const MAX_AVATAR_SIZE = parseInt(process.env.MAX_AVATAR_SIZE) || 100000;
 
@@ -27,18 +29,25 @@ const uploader = multer({
   }
 }).single('file');
 
-exports.registerUser = (req, res) => {
+export const registerUser = (req, res) => {
   
-  uploader(req, res, (err) => {
+  uploader(req, res, async (err) => {
     if (err){
       if (err.code === 'LIMIT_FILE_SIZE')
         return res.status(403).json({error: `Profile pic must be < ${(MAX_AVATAR_SIZE / 1024).toFixed(2)} KB`})
       else
         return res.status(403).json({error: err.message});
     }
+    // Delete the avatar file in case of an error.
     const deleteAvatar = () => {
       fs.unlink(req.file.path, () => {});
     };
+    // Validate file contents.
+    let fileType = await fileTypeFromFile(req.file.path);
+    if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg')){
+      deleteAvatar();
+      return res.status(403).json({error: "Only PNG and JPEG files are allowed!"});
+    }
     let {username, password, name, gender} = req.body;
     if (!(username && password && name && gender)){
       deleteAvatar();
@@ -53,7 +62,7 @@ exports.registerUser = (req, res) => {
   });
 };
 
-exports.loginUser = (req, res) => {
+export const loginUser = (req, res) => {
 
   let {username, password} = req.body;
   if (!(username && password))
@@ -67,7 +76,7 @@ exports.loginUser = (req, res) => {
   });
 };
 
-exports.userProfile = (req, res) => {
+export const userProfile = (req, res) => {
 
   if (req.session.loggedIn !== true)
     return res.status(403).json({error: "Permission denied!"});

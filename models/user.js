@@ -1,7 +1,7 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
-const bcrypt = require("bcrypt");
-const validator = require("validator");
+import bcrypt from 'bcrypt';
+import validator from 'validator';
 
 const userSchema = mongoose.Schema({
   username: {
@@ -32,27 +32,7 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     required: true,
     default: false
-  },
-  results: [
-    {
-      id:{
-        type: ObjectId,
-        required: true
-      },
-      date:{
-        type: Number,
-        required: true
-      },
-      score:{
-        type: Number,
-        required: true
-      },
-      passed:{
-        type: Boolean,
-        required: true
-      }
-    }
-  ]
+  }
 });
 
 userSchema.methods.setPassword = async function(password){
@@ -68,9 +48,9 @@ userSchema.methods.validatePassword = async function(pwd){
 };
 
 const User = mongoose.model('users', userSchema);
-exports.User = User;
+export default User;
 
-exports.createUser = async (username, password, name, gender, avatar) => {
+export const createUser = async (username, password, name, gender, avatar) => {
 
   username = username.toString().trim();
   password = password.toString().trim();
@@ -97,7 +77,7 @@ exports.createUser = async (username, password, name, gender, avatar) => {
   return user;
 };
 
-exports.loginUser = async (username, password) => {
+export const loginUser = async (username, password) => {
 
   const error = new Error("Authentication failed!");
   username = username.toString().trim();
@@ -108,7 +88,7 @@ exports.loginUser = async (username, password) => {
   return user;
 };
 
-exports.setupSession = (session, user) => {
+export const setupSession = (session, user) => {
 
   session.username = user.username;
   session.loggedIn = true;
