@@ -7,7 +7,7 @@ import multer from 'multer';
 import {fileTypeFromFile} from 'file-type';
 import * as model from '../models/user.js';
 
-const MAX_AVATAR_SIZE = parseInt(process.env.MAX_AVATAR_SIZE) || 100000;
+const MAX_AVATAR_SIZE = parseInt(process.env.MAX_AVATAR_SIZE) || 500000;
 
 const storage = multer.diskStorage({
   destination: "static/avatars/",

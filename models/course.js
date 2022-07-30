@@ -70,12 +70,17 @@ export default Course;
 export const createCourse = async (data) => {
 
   let {
-    name, title, releaseDate, questions, questionsCount, passingScore, duration, password
+    name, title, releaseDate, questions, questionsCount,
+    passingScore, duration, password, avatar
   } = data;
   name = name.toString().trim();
   title = title.toString().trim();
   releaseDate = parseInt(releaseDate);
+  questions = JSON.parse(questions);
+  questionsCount = parseInt(questionsCount);
   passingScore = parseInt(passingScore);
+  duration = parseInt(duration);
+  password = password.toString().trim();
   if (name.length < 3 || name.length > 30)
     throw new Error("Invalid course name");
   if (await Course.findOne({name}))
@@ -84,10 +89,12 @@ export const createCourse = async (data) => {
     throw new Error("Invalid course title!");
   if (typeof(questions) !== "object")
     throw new Error("Questions must be an array object");
+  if (questions.length < 5)
+    throw new Error("A course must have at least 5 questions!");
   if (questionsCount > questions.length || questionsCount < 1)
-    throw new Error("Questions per test must be <= total questions");
+    throw new Error("Questions per test must be <= total questions!");
   const course = new Course({
-    name, title, releaseDate, questions, questionsCount, passingScore, duration
+    name, title, releaseDate, questions, questionsCount, passingScore, duration, avatar
   });
   course.creationDate = Date.now();
   if (password)
