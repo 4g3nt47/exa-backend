@@ -1,3 +1,5 @@
+// Controllers for the course endpoints.
+
 import dotenv from 'dotenv';
 dotenv.config();
 import fs from 'fs';
@@ -8,6 +10,8 @@ import * as model from '../models/course.js';
 import multer from 'multer';
 
 const MAX_AVATAR_SIZE = parseInt(process.env.MAX_AVATAR_SIZE) || 500000;
+
+// Setup multer for course avatar upload.
 
 const storage = multer.diskStorage({
   destination: "static/avatars/",
@@ -23,6 +27,7 @@ const uploader = multer({
     fileSize: MAX_AVATAR_SIZE
   },
   fileFilter: (req, file, callback) => {
+    // Some basic mime type validation. Content-based validation is later applied.
     if (file.mimetype !== "image/png" && file.mimetype !== "image/jpeg")
       return callback(new Error("Only PNG and JPEG files are allowed!"));
     return callback(null, true);
@@ -30,13 +35,15 @@ const uploader = multer({
 }).single('file');
 
 
+// Create course.
 export const createCourse = (req, res) => {
 
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
   uploader(req, res, async (err) => {
     if (err){
-      if (err.code === 'LIMIT_FILE_SIZE')
+      // Handle upload error.
+      if (err.code === 'LIMIT_FILE_SIZE') // File too large
         return res.status(403).json({error: `Course avatar must be < ${(MAX_AVATAR_SIZE / 1024).toFixed(2)} KB`})
       else
         return res.status(403).json({error: err.message});
@@ -45,12 +52,14 @@ export const createCourse = (req, res) => {
     const deleteAvatar = () => {
       fs.unlink(req.file.path, () => {});
     };
-    // Validate file contents.
+    // Validate file by contents.
     let fileType = await fileTypeFromFile(req.file.path);
     if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg')){
+      // File type not allowed. Delete the uploaded file and abort the request.
       deleteAvatar();
       return res.status(403).json({error: "Only PNG and JPEG files are allowed!"});
     }
+    // All good. Attempt to create the course.
     req.body.avatar = req.file.path;
     model.createCourse(req.body).then(result => {
       return res.json({success: "Course created!"});
@@ -60,6 +69,7 @@ export const createCourse = (req, res) => {
   });
 };
 
+// For getting data of a single course.
 export const getCourse = (req, res) => {
 
   model.getCourse(req.params.id).then(course => {
@@ -69,6 +79,7 @@ export const getCourse = (req, res) => {
   });
 };
 
+// Get some data on all available courses.
 export const getCourseList = (req, res) => {
 
   model.getCourseList().then(data => {
@@ -78,6 +89,7 @@ export const getCourseList = (req, res) => {
   });
 };
 
+// Delete a course.
 export const deleteCourse = (req, res) => {
   
   if (req.session.admin !== true)

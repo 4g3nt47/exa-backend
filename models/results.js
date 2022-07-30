@@ -1,11 +1,14 @@
-/* 
-  The schema for course results
-*/
+// The results model
 
 import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
 
+// Define the results schema
 const resultSchema = mongoose.Schema({
+  uid: {
+    type: String,
+    required: true
+  },
   course: {
     type: String,
     required: true,
@@ -28,4 +31,6 @@ const resultSchema = mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('results', resultSchema);
+// Apply and export
+const Result = mongoose.model('results', resultSchema);
+export default Result;

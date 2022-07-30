@@ -1,3 +1,5 @@
+// Controllers for the user endpoints.
+
 import dotenv from 'dotenv';
 dotenv.config();
 import fs from 'fs';
@@ -6,6 +8,8 @@ import crypto from 'crypto';
 import multer from 'multer';
 import {fileTypeFromFile} from 'file-type';
 import * as model from '../models/user.js';
+
+// Configure multer for user avatar upload
 
 const MAX_AVATAR_SIZE = parseInt(process.env.MAX_AVATAR_SIZE) || 500000;
 
@@ -23,6 +27,7 @@ const uploader = multer({
     fileSize: MAX_AVATAR_SIZE
   },
   fileFilter: (req, file, callback) => {
+    // Some basic mime type validation. Content-based validation is later applied.
     if (file.mimetype !== "image/png" && file.mimetype !== "image/jpeg")
       return callback(new Error("Only PNG and JPEG files are allowed!"));
     return callback(null, true);
@@ -33,7 +38,7 @@ export const registerUser = (req, res) => {
   
   uploader(req, res, async (err) => {
     if (err){
-      if (err.code === 'LIMIT_FILE_SIZE')
+      if (err.code === 'LIMIT_FILE_SIZE') // File too large
         return res.status(403).json({error: `Profile pic must be < ${(MAX_AVATAR_SIZE / 1024).toFixed(2)} KB`})
       else
         return res.status(403).json({error: err.message});
@@ -48,6 +53,7 @@ export const registerUser = (req, res) => {
       deleteAvatar();
       return res.status(403).json({error: "Only PNG and JPEG files are allowed!"});
     }
+    // Create the user.
     let {username, password, name, gender} = req.body;
     if (!(username && password && name && gender)){
       deleteAvatar();
@@ -62,6 +68,7 @@ export const registerUser = (req, res) => {
   });
 };
 
+// Handles user authentication.
 export const loginUser = (req, res) => {
 
   let {username, password} = req.body;
@@ -76,6 +83,7 @@ export const loginUser = (req, res) => {
   });
 };
 
+// Returns the profile data of the logged in user.
 export const userProfile = (req, res) => {
 
   if (req.session.loggedIn !== true)

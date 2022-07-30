@@ -1,7 +1,10 @@
+// The course model.
+
 import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
 import bcrypt from 'bcrypt';
 
+// Define the course schema
 const courseSchema = mongoose.Schema({
   name:{
     type: String,
@@ -56,23 +59,29 @@ const courseSchema = mongoose.Schema({
   }
 });
 
+// For setting course password using bcrypt
 courseSchema.methods.setPassword = async function(password){
   this.password = await bcrypt.hash(password, 10);
 };
 
+// Returns true if the course is password-protected.
 courseSchema.methods.isProtected = function(){
   return (this.password !== "null");
 };
 
+// Apply the schema, and export.
 const Course = mongoose.model('courses', courseSchema);
 export default Course;
 
+// Creates a course with given data.
 export const createCourse = async (data) => {
 
+  // Destructure the request body.
   let {
     name, title, releaseDate, questions, questionsCount,
     passingScore, duration, password, avatar
   } = data;
+  // Do some validations.
   name = name.toString().trim();
   title = title.toString().trim();
   releaseDate = parseInt(releaseDate);
@@ -93,16 +102,18 @@ export const createCourse = async (data) => {
     throw new Error("A course must have at least 5 questions!");
   if (questionsCount > questions.length || questionsCount < 1)
     throw new Error("Questions per test must be <= total questions!");
+  // Create the course.
   const course = new Course({
     name, title, releaseDate, questions, questionsCount, passingScore, duration, avatar
   });
   course.creationDate = Date.now();
-  if (password)
+  if (password) // Password is optional.
     await course.setPassword(password);
   await course.save();
   return true;
 };
 
+// Get data for a single course. Questions, answers, and actual password (if any) excluded.
 export const getCourse = async (id) => {
 
   if (!ObjectId.isValid(id))
@@ -124,6 +135,7 @@ export const getCourse = async (id) => {
   return data;
 };
 
+// Get data of all courses.
 export const getCourseList = async () => {
 
   const courses = await Course.find({});
@@ -145,6 +157,7 @@ export const getCourseList = async () => {
   return result;
 };
 
+// Delete a course.
 export const deleteCourse = async (id) => {
 
   if (!ObjectId.isValid(id))
