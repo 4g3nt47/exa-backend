@@ -54,12 +54,12 @@ export const registerUser = (req, res) => {
       return res.status(403).json({error: "Only PNG and JPEG files are allowed!"});
     }
     // Create the user.
-    let {username, password, name, gender} = req.body;
-    if (!(username && password && name && gender)){
+    let {username, password, name} = req.body;
+    if (!(username && password && name)){
       deleteAvatar();
       return res.status(404).json({error: "Required params not defined!"});
     }
-    model.createUser(username, password, name, gender, req.file.path).then(user => {
+    model.createUser(username, password, name, req.file.path).then(user => {
       return res.json({success: "Account created!"});
     }).catch(error => {
       deleteAvatar();
@@ -89,5 +89,6 @@ export const userProfile = (req, res) => {
   if (req.session.loggedIn !== true)
     return res.status(403).json({error: "Permission denied!"});
   req.session.user.password = undefined; // Remove the password
+  req.session.user.activeTest = undefined; // Remove active test data if any.
   return res.json(req.session.user);
 };

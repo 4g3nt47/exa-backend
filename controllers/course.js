@@ -5,9 +5,9 @@ dotenv.config();
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import multer from 'multer';
 import {fileTypeFromFile} from 'file-type';
 import * as model from '../models/course.js';
-import multer from 'multer';
 
 const MAX_AVATAR_SIZE = parseInt(process.env.MAX_AVATAR_SIZE) || 500000;
 
@@ -72,6 +72,8 @@ export const createCourse = (req, res) => {
 // For getting data of a single course.
 export const getCourse = (req, res) => {
 
+  if (req.session.loggedIn !== true)
+    return res.status(403).json({error: "Permission denied!"});
   model.getCourse(req.params.id).then(course => {
     return res.json(course);
   }).catch(error => {
@@ -82,6 +84,8 @@ export const getCourse = (req, res) => {
 // Get some data on all available courses.
 export const getCourseList = (req, res) => {
 
+  if (req.session.loggedIn !== true)
+    return res.status(403).json({error: "Permission denied!"});
   model.getCourseList().then(data => {
     return res.json(data);
   }).catch(error => {
@@ -96,6 +100,33 @@ export const deleteCourse = (req, res) => {
     return res.status(403).json({error: "Permission denied!"});
   model.deleteCourse(req.params.id).then(() => {
     return res.json({success: "Course deleted!"});
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
+};
+
+// Start a course test
+export const startCourse = (req, res) => {
+  
+  if (req.session.loggedIn !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  if (!(req.body.id))
+    return res.status(403).json({error: "Required parameters not defined!"});
+  model.startCourse(req.session.user, req.body.id, req.body.password).then(course => {
+    return res.json(course);
+  }).catch(error => {
+    console.log(error);
+    return res.status(403).json({error: error.message});
+  });
+};
+
+// Update answers for an active test.
+export const updateAnswers = (req, res) => {
+
+  if (req.session.loggedIn !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  model.updateAnswers(req.session.user, req.body).then(data => {
+    return res.json(data);
   }).catch(error => {
     return res.status(403).json({error: error.message});
   });

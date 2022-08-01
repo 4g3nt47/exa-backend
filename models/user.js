@@ -1,8 +1,10 @@
+// The user model.
+
 import mongoose from 'mongoose';
-const ObjectId = mongoose.Types.ObjectId;
 import bcrypt from 'bcrypt';
 import validator from 'validator';
 
+// Define the schema for users.
 const userSchema = mongoose.Schema({
   username: {
     type: String,
@@ -13,10 +15,6 @@ const userSchema = mongoose.Schema({
     required: true
   },
   name: {
-    type: String,
-    required: true
-  },
-  gender: {
     type: String,
     required: true
   },
@@ -32,9 +30,42 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     required: true,
     default: false
-  }
+  },
+  activeTests: [
+    {
+      id: {
+        type: String,
+        required: true
+      },
+      finishTime: {
+        type: Number,
+        required: true
+      },
+      questions: [
+        {
+          id: {
+            type: String,
+            required: true
+          },
+          question: {
+            type: String,
+            required: true
+          },
+          options: {
+            type: Object,
+            required: true
+          },
+          answer: {
+            type: Number,
+            required: true
+          }
+        }
+      ]
+    }
+  ]
 });
 
+// Sets user password using bcrypt
 userSchema.methods.setPassword = async function(password){
 
   // if (!validator.isStrongPassword(password))
@@ -43,40 +74,41 @@ userSchema.methods.setPassword = async function(password){
   return this.password;
 };
 
+// Matches given password with hashed user password.
 userSchema.methods.validatePassword = async function(pwd){
   return await bcrypt.compare(pwd, this.password);
 };
 
+// Apply the schema and export the model.
 const User = mongoose.model('users', userSchema);
 export default User;
 
-export const createUser = async (username, password, name, gender, avatar) => {
+// Creates user accounts.
+export const createUser = async (username, password, name, avatar) => {
 
   username = username.toString().trim();
   password = password.toString().trim();
   name = name.toString().trim();
-  gender = gender.toString().trim();
   if (username.length < 3 || username.length > 32)
     throw new Error("Invalid username!");
   if (name.length < 3 || name.length > 32)
     throw new Error("Invalid name!");
-  if (gender !== "male" && gender !== "female")
-    throw new Error("Invalid gender!");
   const valid = await User.findOne({username});
   if (valid)
     throw new Error("User already exists!");
   const user = new User({
     username,
     name,
-    gender,
     avatar,
     creationDate: Date.now()
   });
   await user.setPassword(password);
+  user.activeTest = [];
   await user.save();
   return user;
 };
 
+// Handles login
 export const loginUser = async (username, password) => {
 
   const error = new Error("Authentication failed!");
@@ -88,6 +120,7 @@ export const loginUser = async (username, password) => {
   return user;
 };
 
+// Setup session for a logged in user.
 export const setupSession = (session, user) => {
 
   session.username = user.username;

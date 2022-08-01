@@ -3,7 +3,7 @@
 import {Router} from 'express';
 const router = Router();
 import {
-  createCourse, getCourse, getCourseList, deleteCourse
+  createCourse, getCourse, getCourseList, deleteCourse, startCourse, updateAnswers
 } from '../controllers/course.js';
 
 // For creating a course.
@@ -17,5 +17,11 @@ router.get("/:id", getCourse);
 
 // For deleting a course
 router.delete("/:id", deleteCourse);
+
+// For starting a test
+router.post("/start", startCourse);
+
+// For submitting answers during a test.
+router.post("/answer", updateAnswers);
 
 export default router;

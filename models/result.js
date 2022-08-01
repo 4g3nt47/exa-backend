@@ -5,11 +5,11 @@ const ObjectId = mongoose.Types.ObjectId;
 
 // Define the results schema
 const resultSchema = mongoose.Schema({
-  uid: {
+  userID: {
     type: String,
     required: true
   },
-  course: {
+  courseID: {
     type: String,
     required: true,
   },
