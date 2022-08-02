@@ -25,6 +25,16 @@ const resultSchema = mongoose.Schema({
     type: Number,
     required: true
   },
+  passedQuestions: {
+    type: Object,
+    required: true,
+    default: []
+  },
+  failedQuestions: {
+    type: Object,
+    required: true,
+    default: []
+  },
   duration: {
     type: Number,
     required: true

@@ -115,7 +115,6 @@ export const startCourse = (req, res) => {
   model.startCourse(req.session.user, req.body.id, req.body.password).then(course => {
     return res.json(course);
   }).catch(error => {
-    console.log(error);
     return res.status(403).json({error: error.message});
   });
 };

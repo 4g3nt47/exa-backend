@@ -37,6 +37,10 @@ const userSchema = mongoose.Schema({
         type: String,
         required: true
       },
+      startTime: {
+        type: Number,
+        required: true
+      },
       finishTime: {
         type: Number,
         required: true

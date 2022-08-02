@@ -150,7 +150,7 @@ export const getCourse = async (id) => {
 
   if (!ObjectId.isValid(id))
     throw new Error("Invalid ID");
-  const course = await Course.findOne({_id: new ObjectId(id)});
+  const course = await Course.findById(new ObjectId(id));
   if (!course)
     throw new Error("Invalid course!");
   let data = {
@@ -218,14 +218,17 @@ export const startCourse = async (user, courseID, password) => {
   if (!ObjectId.isValid(courseID))
     throw new Error("Invalid course ID!");
   courseID = new ObjectId(courseID);
-  if (await Result.findOne({_id: courseID}))
-    throw new Error("Course already taken!");
+  if (await Result.findOne({courseID}))
+    throw new Error("You took this course already!");
   // Check if it's an active course (no course auth required for resuming a course)
   let course = getActiveCourse(user, courseID);
-  if (course)
+  if (course){
+    // if (Date.now() > course.finishTime)
+    //   throw new Error("Time up!");
     return course;
+  }
   // Find the course
-  course = await Course.findById(courseID);
+  course = await Course.findById(new ObjectId(courseID));
   if (!course)
     throw new Error("Invalid course!");
   if (Date.now() < course.releaseDate)
@@ -248,6 +251,7 @@ export const startCourse = async (user, courseID, password) => {
   }
   const activeTest = {
     id: courseID,
+    startTime: Date.now(),
     finishTime: Date.now() + (course.duration * questions.length),
     questions: testQuestions
   };
@@ -259,7 +263,7 @@ export const startCourse = async (user, courseID, password) => {
 // Updates the answers of an active test.
 export const updateAnswers = async (user, body) => {
 
-  let {courseID, data} = body; 
+  let {courseID, data, finished} = body; 
   if (!ObjectId.isValid(courseID))
     throw new Error("Invalid course ID!");
   if (!data)
@@ -269,19 +273,92 @@ export const updateAnswers = async (user, body) => {
   if (!course)
     throw new Error("Invalid course!");
   // Check if test time is not over
-  if (Date.now() > course.finishTime){
-    // Disregard the current update and end the test.
-    finishTest(user, courseID);
-  }
+  // if (Date.now() > course.finishTime){
+  //   // Disregard the current update and end the test.
+  //   await finishTest(user, course);
+  // }
+
+  // Generate a list of valid question IDs for the questions selected for this test.
+  // This helps prevent users from cheating by submitting answers to valid questions that are not in the test scope.
+  let validIDs = [];
+  course.questions.map(q => validIDs.push(q.id));
   // Map questions IDs to their data
   const newQuestions = {};
-  for (let q of data)
-    newQuestions[q.id] = q;
-  // Apply the updates
-  for (let i = 0; i < course.questions.length; i++){
-    if (newQuestions[course.questions[i].id])
-      course.questions[i].answer = parseInt(newQuestions[course.questions[i].answer]);
+  for (let q of data){
+    const qid = q.id;
+    // Validate the ID and make sure it matches one of the questions selected for the current test.
+    if (!validIDs.includes(qid)){
+      // This is very likely a cheating attempt.
+      // Event should be logged and test invalidated.
+      throw new Error("Question with an invalid ID detected!");
+    }
+    newQuestions[qid] = q;
   }
-  // Save to DB
+  // Apply the updates
+  for (let i = 0; i < course.questions.length; i++){ // Loop over all questions in the test
+    if (newQuestions[course.questions[i].id]) // Update provided for the current question?
+      course.questions[i].answer = parseInt(newQuestions[course.questions[i].id].answer);
+  }
+  if (finished) // User is done with the test.
+    return (await finishTest(user, course));
+  else
+    return (await user.save());
+};
+
+// Called when a course has being finished. Handles result generation and test cache.
+const finishTest = async (user, activeTest) => {
+
+  // Load the original course data.
+  const courseID = activeTest.id;
+  const course = await Course.findById(new ObjectId(courseID));
+  if (!course)
+    throw new Error("Unable to find original course with ID: " + courseID);
+  // Start marking.
+  let marked = []; // For storing ID of marked questions to detect duplicate submissions.
+  let correct = []; // Stores ID of questions user got right.
+  let wrong = []; // Stores ID of questions user got wrong.
+  // Create a mapping of question IDs to their valid answers.
+  let validAnswers = {};
+  for (let question of course.questions)
+    validAnswers[question.id] = question.answer;
+  // Loop over submissions, and mark.
+  for (let question of activeTest.questions){
+    const questionID = question.id;
+    if (marked.includes(questionID)){
+      // Duplicate questions submitted.
+      // This is very likely to be a cheating attempt by a user, so the test should be invalidated and the event logged.
+      correct = 0;
+      break;
+    }
+    marked.push(questionID);
+    if (validAnswers[questionID] === question.answer) // User answered correctly?
+      correct.push(questionID);
+    else
+      wrong.push(questionID);
+  }
+  // Calculate the score in percentage (0 - 100)
+  let score = (correct.length / course.questionsCount) * 100;
+  // Determine if the user passed or failed.
+  let passed = (score >= course.passingScore);
+  // Create and save the result.
+  const result = new Result({
+    userID: user._id,
+    courseID,
+    score,
+    passed,
+    passedQuestions: correct,
+    failedQuestions: wrong,
+    duration: Date.now() - activeTest.startTime,
+    date: Date.now()
+  });
+  await result.save();
+  // Clear the test cache from user's profile
+  for (let i = 0; i < user.activeTests.length; i++){
+    if (user.activeTests[i].id === courseID){
+      user.activeTests.splice(i, 1);
+      break;
+    }
+  }
+  // Finally, save the user's profile
   return (await user.save());
 };
