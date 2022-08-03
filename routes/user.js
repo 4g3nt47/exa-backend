@@ -1,7 +1,7 @@
 // API routes for user-related actions.
 
 import {Router} from 'express';
-import {registerUser, loginUser, userProfile} from '../controllers/user.js';
+import {registerUser, loginUser, getProfile} from '../controllers/user.js';
 
 const router = Router();
 
@@ -12,7 +12,7 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 
 // Profile data
-router.get("/profile", userProfile);
+router.get("/profile", getProfile);
 
 // Logout
 router.get("/logout", (req, res) => {

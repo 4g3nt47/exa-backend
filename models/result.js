@@ -1,4 +1,4 @@
-// The results model
+// The test results model
 
 import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
@@ -13,7 +13,19 @@ const resultSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  courseName: {
+    type: String,
+    required: true
+  },
+  courseTitle: {
+    type: String,
+    required: true
+  },
   score: {
+    type: Number,
+    required: true
+  },
+  passingScore: {
     type: Number,
     required: true
   },

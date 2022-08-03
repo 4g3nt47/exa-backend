@@ -146,15 +146,15 @@ export const createCourse = async (data) => {
 };
 
 // Get data for a single course. Questions, answers, and actual password (if any) excluded.
-export const getCourse = async (id) => {
+export const getCourse = async (user, id) => {
 
   if (!ObjectId.isValid(id))
     throw new Error("Invalid ID");
   const course = await Course.findById(new ObjectId(id));
   if (!course)
     throw new Error("Invalid course!");
-  let data = {
-    id: course._id,
+  let courseData = {
+    id: course._id.toString(),
     name: course.name,
     title: course.title,
     avatar: course.avatar,
@@ -163,31 +163,26 @@ export const getCourse = async (id) => {
     releaseDate: course.releaseDate,
     questions: course.questionsCount,
     passingScore: course.passingScore,
-    duration: course.duration
+    duration: course.duration,
+    activeTest: false
   };
-  return data;
+  // Check if the course is active for the user.
+  for (let testData of user.activeTests){
+    if (testData.id === courseData.id){
+      courseData.activeTest = true;
+      break;
+    }
+  }
+  return courseData;
 };
 
 // Get data of all courses.
-export const getCourseList = async () => {
+export const getCourseList = async (user) => {
 
   const courses = await Course.find({});
   const result = [];
-  for (let course of courses){
-    let data = {
-      id: course._id,
-      name: course.name,
-      title: course.title,
-      avatar: course.avatar,
-      password: course.isProtected(),
-      creationDate: course.creationDate,
-      releaseDate: course.releaseDate,
-      questions: course.questionsCount,
-      passingScore: course.passingScore,
-      duration: course.duration
-    };
-    result.push(data);
-  }
+  for (let course of courses)
+    result.push(await getCourse(user, course._id.toString()));
   return result;
 };
 
@@ -223,9 +218,11 @@ export const startCourse = async (user, courseID, password) => {
   // Check if it's an active course (no course auth required for resuming a course)
   let course = getActiveCourse(user, courseID);
   if (course){
-    // if (Date.now() > course.finishTime)
-    //   throw new Error("Time up!");
-    return course;
+    if (Date.now() > course.finishTime){ // Test time has been exhausted
+      await finishTest(user, course);
+      throw new Error("You have ran out of time. Your result has been submitted successfully.");
+    }
+    return course; // Return the active course data so user can resume.
   }
   // Find the course
   course = await Course.findById(new ObjectId(courseID));
@@ -273,11 +270,10 @@ export const updateAnswers = async (user, body) => {
   if (!course)
     throw new Error("Invalid course!");
   // Check if test time is not over
-  // if (Date.now() > course.finishTime){
-  //   // Disregard the current update and end the test.
-  //   await finishTest(user, course);
-  // }
-
+  if (Date.now() > course.finishTime){
+    // Disregard the current update and end the test.
+    return (await finishTest(user, course));
+  }
   // Generate a list of valid question IDs for the questions selected for this test.
   // This helps prevent users from cheating by submitting answers to valid questions that are not in the test scope.
   let validIDs = [];
@@ -341,15 +337,23 @@ const finishTest = async (user, activeTest) => {
   // Determine if the user passed or failed.
   let passed = (score >= course.passingScore);
   // Create and save the result.
+  let duration = Date.now() - activeTest.startTime;
+  if (duration > (activeTest.finishTime - activeTest.startTime)){ // Test duration reported exceed maximum allowed?
+    // This can happen if user exits the test without submitting and didn't resume until the time allowed has passed, or when they allow the countdown to finish.
+    duration = activeTest.finishTime - activeTest.startTime;
+  }
   const result = new Result({
     userID: user._id,
     courseID,
+    courseName: course.name,
+    courseTitle: course.title,
     score,
+    passingScore: course.passingScore,
     passed,
     passedQuestions: correct,
     failedQuestions: wrong,
-    duration: Date.now() - activeTest.startTime,
-    date: Date.now()
+    date: Date.now(),
+    duration
   });
   await result.save();
   // Clear the test cache from user's profile

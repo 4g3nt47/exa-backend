@@ -3,6 +3,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import validator from 'validator';
+import Result from './result.js';
 
 // Define the schema for users.
 const userSchema = mongoose.Schema({
@@ -131,4 +132,33 @@ export const setupSession = (session, user) => {
   session.loggedIn = true;
   session.admin = user.admin;
   session.user = user;
+};
+
+// Obtain profile data for the given user.
+export const getProfile = async (user) => {
+
+  // Generate course results
+  const results = [];
+  const data = await Result.find({userID: user._id.toString()});
+  let testsPassed = 0;
+  for (let result of data){
+    result.passedQuestions = result.passedQuestions.length;
+    result.failedQuestions = result.failedQuestions.length;
+    testsPassed += (result.passed === true ? 1 : 0);
+    results.push(result);
+  }
+  results.reverse(); // Newer results should come first
+  // Build the profile
+  return ({
+    _id: user._id.toString(),
+    username: user.username,
+    name: user.name,
+    avatar: user.avatar,
+    creationDate: user.creationDate,
+    admin: user.admin,
+    activeTests: user.activeTests.length,
+    results,
+    testsTaken: results.length,
+    testsPassed
+  });
 };

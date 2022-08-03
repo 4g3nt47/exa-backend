@@ -74,7 +74,7 @@ export const getCourse = (req, res) => {
 
   if (req.session.loggedIn !== true)
     return res.status(403).json({error: "Permission denied!"});
-  model.getCourse(req.params.id).then(course => {
+  model.getCourse(req.session.user, req.params.id).then(course => {
     return res.json(course);
   }).catch(error => {
     return res.status(403).json({error: error.message});
@@ -86,7 +86,7 @@ export const getCourseList = (req, res) => {
 
   if (req.session.loggedIn !== true)
     return res.status(403).json({error: "Permission denied!"});
-  model.getCourseList().then(data => {
+  model.getCourseList(req.session.user).then(data => {
     return res.json(data);
   }).catch(error => {
     return res.status(403).json({error: error.message});

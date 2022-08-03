@@ -84,11 +84,13 @@ export const loginUser = (req, res) => {
 };
 
 // Returns the profile data of the logged in user.
-export const userProfile = (req, res) => {
+export const getProfile = (req, res) => {
 
   if (req.session.loggedIn !== true)
     return res.status(403).json({error: "Permission denied!"});
-  req.session.user.password = undefined; // Remove the password
-  req.session.user.activeTest = undefined; // Remove active test data if any.
-  return res.json(req.session.user);
+  model.getProfile(req.session.user).then(profile => {
+    return res.json(profile);
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
 };
