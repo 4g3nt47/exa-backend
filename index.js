@@ -11,6 +11,7 @@ import {downloadExport} from './controllers/index.js';
 import userRoute from './routes/user.js';
 import User, {setupSession} from './models/user.js';
 import courseRoute from './routes/course.js';
+import logsRoute from './routes/event-log.js';
 
 // Env vars, from .env file.
 const DB_URL = process.env.DB_URL;
@@ -28,7 +29,6 @@ app.use(cors({
   origin: ORIGIN_URL,
   credentials: true
 }));
-
 
 // Define our static files directory
 app.use("/static", express.static("./static"));
@@ -68,6 +68,7 @@ app.use(async (req, res, next) => {
 // Enable imported routes.
 app.use("/user", userRoute);
 app.use("/course", courseRoute);
+app.use("/logs", logsRoute);
 
 // The route for downloading exported files.
 app.use("/exports/:filename", downloadExport);

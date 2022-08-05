@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import validator from 'validator';
 import Result from './result.js';
+import {logStatus, logWarning, logError} from './event-log.js';
 
 // Define the schema for users.
 const userSchema = mongoose.Schema({
@@ -122,6 +123,7 @@ export const loginUser = async (username, password) => {
   const user = await User.findOne({username});
   if (!(user && (await user.validatePassword(password) === true)))
     throw error;
+  logStatus(`'${username}' logged in`);
   return user;
 };
 
@@ -161,4 +163,43 @@ export const getProfile = async (user) => {
     testsTaken: results.length,
     testsPassed
   });
+};
+
+// Grant or remove admin perms to a user.
+export const toggleAdmin = async (username, grant) => {
+
+  const data = await User.updateOne({username: username.toString()}, {admin: grant});
+  if (data.modifiedCount > 0){
+    if (grant)
+      logWarning(`Admin privs granted to '${username}'`);
+    else
+      logWarning(`Admin privs revoked from '${username}'`);
+    return true;
+  }else{
+    throw new Error("Invalid user!");
+  }
+};
+
+// Wipe results for a user
+export const wipeResults = async (username) => {
+
+  const data = await Result.deleteMany({username: username.toString()});
+  if (data.deletedCount > 0){
+    logWarning(`Results for '${username}' wiped`);
+    return true;
+  }else{
+    throw new Error("No results available!");
+  }
+};
+
+// Delete user account
+export const deleteUser = async (username) => {
+  
+  const data = await User.deleteOne({username: username.toString()});
+  if (data.deletedCount > 0){
+    logWarning(`Account of '${username}' deleted`);
+    return true;
+  }else{
+    throw new Error("Invalid user!");
+  }
 };

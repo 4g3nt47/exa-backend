@@ -104,3 +104,51 @@ export const getProfile = (req, res) => {
     });    
   }
 };
+
+// Grant admin perms to a user
+export const grantAdmin = (req, res) => {
+  
+  if (req.session.admin !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  model.toggleAdmin(req.params.username, true).then(() => {
+    return res.json({success: "Privileges granted!"});
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
+};
+
+// Revoke admin perms to a user
+export const revokeAdmin = (req, res) => {
+  
+  if (req.session.admin !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  model.toggleAdmin(req.params.username, false).then(() => {
+    return res.json({success: "Privileges revoked!"});
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
+};
+
+// Wipe results of a user
+export const wipeResults = (req, res) => {
+  
+  if (req.session.admin !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  model.wipeResults(req.params.username).then(() => {
+    return res.json({success: "Results wiped!"});
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
+};
+
+// Delete user account
+export const deleteUser = (req, res) => {
+
+  if (req.session.admin !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  model.deleteUser(req.params.username).then(() => {
+    return res.json({success: "User deleted!"});
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  })
+}
