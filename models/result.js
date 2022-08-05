@@ -9,6 +9,14 @@ const resultSchema = mongoose.Schema({
     type: String,
     required: true
   },
+  username: {
+    type: String,
+    required: true
+  },
+  name: {
+    type: String,
+    required: true
+  },
   courseID: {
     type: String,
     required: true,

@@ -7,7 +7,8 @@ import path from 'path';
 import crypto from 'crypto';
 import multer from 'multer';
 import {fileTypeFromFile} from 'file-type';
-import * as model from '../models/user.js';
+import User, * as model from '../models/user.js';
+
 
 // Configure multer for user avatar upload
 
@@ -43,28 +44,21 @@ export const registerUser = (req, res) => {
       else
         return res.status(403).json({error: err.message});
     }
-    // Delete the avatar file in case of an error.
-    const deleteAvatar = () => {
-      fs.unlink(req.file.path, () => {});
-    };
-    // Validate file contents.
-    let fileType = await fileTypeFromFile(req.file.path);
-    if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg')){
-      deleteAvatar();
-      return res.status(403).json({error: "Only PNG and JPEG files are allowed!"});
-    }
-    // Create the user.
-    let {username, password, name} = req.body;
-    if (!(username && password && name)){
-      deleteAvatar();
-      return res.status(404).json({error: "Required params not defined!"});
-    }
-    model.createUser(username, password, name, req.file.path).then(user => {
-      return res.json({success: "Account created!"});
-    }).catch(error => {
-      deleteAvatar();
+    try{      
+      // Validate file contents.
+      let fileType = await fileTypeFromFile(req.file.path);
+      if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg'))
+        throw new Error("Only PNG and JPEG files are allowed!");
+      // Create the user.
+      let {username, password, name} = req.body;
+      if (!(username && password && name))
+        return new Error("Required params not defined!");
+      await model.createUser(username, password, name, req.file.path);
+      return res.json({success: "Account created successfully!"});
+    }catch(error){
+      fs.unlink(req.file.path, () => {}); // Delete the uploaded avatar
       return res.status(403).json({error: error.message});
-    });
+    }
   });
 };
 
@@ -83,14 +77,30 @@ export const loginUser = (req, res) => {
   });
 };
 
-// Returns the profile data of the logged in user.
+// Returns the profile data of the logged in user, or a specified user when request is by an admin.
 export const getProfile = (req, res) => {
 
   if (req.session.loggedIn !== true)
     return res.status(403).json({error: "Permission denied!"});
-  model.getProfile(req.session.user).then(profile => {
-    return res.json(profile);
-  }).catch(error => {
-    return res.status(403).json({error: error.message});
-  });
+  if (req.params.username){ // Profile request for a different user.
+    if (req.session.admin !== true)
+      return res.status(403).json({error: "Permission denied!"});
+    User.findOne({username: req.params.username.toString()}, (err, user) => {
+      if (err)
+        return res.status(403).json({error: err.message});
+      if (!user)
+        return res.status(404).json({error: "Invalid user!"});
+      model.getProfile(user).then(profile => {
+        return res.json(profile);
+      }).catch(error => {
+        return res.status(403).json({error: error.message});
+      });
+    });
+  }else{
+    model.getProfile(req.session.user).then(profile => {
+      return res.json(profile);
+    }).catch(error => {
+      return res.status(403).json({error: error.message});
+    });    
+  }
 };

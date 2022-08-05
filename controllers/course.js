@@ -48,24 +48,19 @@ export const createCourse = (req, res) => {
       else
         return res.status(403).json({error: err.message});
     }
-    // Delete the avatar file in case of an error.
-    const deleteAvatar = () => {
-      fs.unlink(req.file.path, () => {});
-    };
     // Validate file by contents.
-    let fileType = await fileTypeFromFile(req.file.path);
-    if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg')){
-      // File type not allowed. Delete the uploaded file and abort the request.
-      deleteAvatar();
-      return res.status(403).json({error: "Only PNG and JPEG files are allowed!"});
-    }
-    // All good. Attempt to create the course.
-    req.body.avatar = req.file.path;
-    model.createCourse(req.body).then(result => {
-      return res.json({success: "Course created!"});
-    }).catch(error => {
+    try{      
+      let fileType = await fileTypeFromFile(req.file.path);
+      if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg')) // File type not allowed
+        throw new Error("Only PNG and JPEG files are allowed!");
+      // All good. Attempt to create the course.
+      req.body.avatar = req.file.path;
+      await model.createCourse(req.body)
+      return res.json({success: "Course created successfully!"});
+    }catch(error){
+      fs.unlink(req.file.path, () => {}); // Delete the avatar
       return res.status(403).json({error: error.message});
-    });
+    }
   });
 };
 
@@ -105,6 +100,18 @@ export const deleteCourse = (req, res) => {
   });
 };
 
+// Delete all the results for a course.
+export const deleteCourseResults = (req, res) => {
+
+  if (req.session.admin !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  model.deleteCourseResults(req.params.id).then(() => {
+    return res.json({success: "Results deleted!"});
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
+};
+
 // Start a course test
 export const startCourse = (req, res) => {
   
@@ -126,6 +133,36 @@ export const updateAnswers = (req, res) => {
     return res.status(403).json({error: "Permission denied!"});
   model.updateAnswers(req.session.user, req.body).then(data => {
     return res.json(data);
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
+};
+
+// For exporting results.
+export const exportResults = (req, res) => {
+
+  if (req.session.admin !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  model.exportResults(req.params.id).then(outfile => {
+    return res.json({
+      success: "Results exported!",
+      location: outfile
+    });
+  }).catch(error => {
+    return res.status(403).json({error: error.message});
+  });
+};
+
+// For exporting questions.
+export const exportQuestions = (req, res) => {
+
+  if (req.session.admin !== true)
+    return res.status(403).json({error: "Permission denied!"});
+  model.exportQuestions(req.params.id).then(outfile => {
+    return res.json({
+      success: "Questions exported!",
+      location: outfile
+    });
   }).catch(error => {
     return res.status(403).json({error: error.message});
   });

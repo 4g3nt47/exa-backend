@@ -1,4 +1,5 @@
 .env
 node_modules/
+exports/
 static/avatars/
 static/files/

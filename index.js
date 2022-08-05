@@ -7,6 +7,7 @@ import session from 'express-session';
 import mongoose from 'mongoose';
 import MongoStore from 'connect-mongo';
 import cors from 'cors';
+import {downloadExport} from './controllers/index.js';
 import userRoute from './routes/user.js';
 import User, {setupSession} from './models/user.js';
 import courseRoute from './routes/course.js';
@@ -67,6 +68,9 @@ app.use(async (req, res, next) => {
 // Enable imported routes.
 app.use("/user", userRoute);
 app.use("/course", courseRoute);
+
+// The route for downloading exported files.
+app.use("/exports/:filename", downloadExport);
 
 // Handle request for invalid endpoints
 app.all("*", (req, res) => {

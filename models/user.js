@@ -134,7 +134,7 @@ export const setupSession = (session, user) => {
   session.user = user;
 };
 
-// Obtain profile data for the given user.
+// Build and return profile for the given user data
 export const getProfile = async (user) => {
 
   // Generate course results

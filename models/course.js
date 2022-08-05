@@ -1,9 +1,11 @@
 // The course model.
 
+import fs from 'fs';
 import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import excel from 'excel4node';
 import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
-import bcrypt from 'bcrypt';
 import Result from './result.js';
 
 // Define the course schema
@@ -197,6 +199,14 @@ export const deleteCourse = async (id) => {
   return result;
 };
 
+// Delete results for a course.
+export const deleteCourseResults = async (id) => {
+
+  if (!ObjectId.isValid(id))
+    throw new Error("Invalid ID!");
+  return (await Result.deleteMany({courseID: id}));
+};
+
 // Get an active course for the user using the given course ID
 const getActiveCourse = (user, courseID) => {
 
@@ -213,7 +223,7 @@ export const startCourse = async (user, courseID, password) => {
   if (!ObjectId.isValid(courseID))
     throw new Error("Invalid course ID!");
   courseID = new ObjectId(courseID);
-  if (await Result.findOne({courseID}))
+  if (await Result.findOne({userID: user._id.toString(), courseID}))
     throw new Error("You took this course already!");
   // Check if it's an active course (no course auth required for resuming a course)
   let course = getActiveCourse(user, courseID);
@@ -344,6 +354,8 @@ const finishTest = async (user, activeTest) => {
   }
   const result = new Result({
     userID: user._id,
+    username: user.username,
+    name: user.name,
     courseID,
     courseName: course.name,
     courseTitle: course.title,
@@ -365,4 +377,59 @@ const finishTest = async (user, activeTest) => {
   }
   // Finally, save the user's profile
   return (await user.save());
+};
+
+// For exporting results of a course to a .xlsx excel file for download.
+export const exportResults = async (courseID) => {
+
+  if (!ObjectId.isValid(courseID))
+    throw new Error("Invalid course ID!");
+  const results = await Result.find({courseID});
+  if (results.length === 0)
+    throw new Error("No results available!");
+  let course = await Course.findById(new ObjectId(courseID));
+  let outfile = `exports/${course.name}-results.xlsx`;
+  const workbook = new excel.Workbook();
+  const worksheet = workbook.addWorksheet(`${course.name} Results`);
+  const colsStyle = workbook.createStyle({
+    font: {
+      color: 'green'
+    }
+  })
+  const cellsStyle = workbook.createStyle({
+    font: {
+      color: 'black'
+    }
+  });
+  let colNames = ["S/N", "USERNAME", "NAME", "CORRECT ANSWERS", "WRONG ANSWERS", "SCORE (%)", "REMARK", "DURATION (minutes)", "DATE"];
+  for (let i = 0; i < colNames.length; i++)
+    worksheet.cell(1, i + 1).string(colNames[i]).style(colsStyle);
+  for (let i = 0; i < results.length; i++){
+    const result = results[i];
+    const rowIndex = i + 2;
+    worksheet.cell(rowIndex, 1).number(i + 1).style(cellsStyle);
+    worksheet.cell(rowIndex, 2).string(result.username).style(cellsStyle);
+    worksheet.cell(rowIndex, 3).string(result.name).style(cellsStyle);
+    worksheet.cell(rowIndex, 4).number(result.passedQuestions.length).style(cellsStyle);
+    worksheet.cell(rowIndex, 5).number(result.failedQuestions.length).style(cellsStyle);
+    worksheet.cell(rowIndex, 6).number(result.score).style(cellsStyle);
+    worksheet.cell(rowIndex, 7).string(result.passed === true ? 'Pass' : 'Fail').style(cellsStyle);
+    worksheet.cell(rowIndex, 8).number(parseFloat((result.duration / 60000).toFixed(2))).style(cellsStyle);
+    worksheet.cell(rowIndex, 9).string(new Date(result.date).toLocaleString()).style(cellsStyle);
+  }
+  workbook.write(outfile);
+  return outfile;
+};
+
+// For exporting the questions of a course into a .json file for download.
+export const exportQuestions = async (courseID) => {
+
+  if (!ObjectId.isValid(courseID))
+    throw new Error("Invalid course ID");
+  const course = await Course.findById(new ObjectId(courseID));
+  if (!course)
+    throw new Error("Invalid course!");
+  let outfile = `exports/${course.name}-questions.json`;
+  fs.writeFileSync(outfile, JSON.stringify(course.questions));
+  return outfile;
 };

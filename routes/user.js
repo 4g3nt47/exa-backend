@@ -11,8 +11,11 @@ router.post("/register", registerUser);
 // User login
 router.post("/login", loginUser);
 
-// Profile data
+// Profile data of logged in user.
 router.get("/profile", getProfile);
+
+// Profile data of a specific user.
+router.get("/profile/:username", getProfile);
 
 // Logout
 router.get("/logout", (req, res) => {
