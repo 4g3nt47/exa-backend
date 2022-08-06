@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import validator from 'validator';
 import Result from './result.js';
-import {logStatus, logWarning, logError} from './event-log.js';
 
 // Define the schema for users.
 const userSchema = mongoose.Schema({
@@ -97,6 +96,8 @@ export const createUser = async (username, password, name, avatar) => {
   name = name.toString().trim();
   if (username.length < 3 || username.length > 32)
     throw new Error("Invalid username!");
+  if (!validator.isStrongPassword(password))
+    throw new Error("Password too weak!");
   if (name.length < 3 || name.length > 32)
     throw new Error("Invalid name!");
   const valid = await User.findOne({username});
@@ -123,7 +124,6 @@ export const loginUser = async (username, password) => {
   const user = await User.findOne({username});
   if (!(user && (await user.validatePassword(password) === true)))
     throw error;
-  logStatus(`'${username}' logged in`);
   return user;
 };
 
@@ -169,37 +169,28 @@ export const getProfile = async (user) => {
 export const toggleAdmin = async (username, grant) => {
 
   const data = await User.updateOne({username: username.toString()}, {admin: grant});
-  if (data.modifiedCount > 0){
-    if (grant)
-      logWarning(`Admin privs granted to '${username}'`);
-    else
-      logWarning(`Admin privs revoked from '${username}'`);
+  if (data.modifiedCount > 0)
     return true;
-  }else{
+  else
     throw new Error("Invalid user!");
-  }
 };
 
 // Wipe results for a user
 export const wipeResults = async (username) => {
 
   const data = await Result.deleteMany({username: username.toString()});
-  if (data.deletedCount > 0){
-    logWarning(`Results for '${username}' wiped`);
+  if (data.deletedCount > 0)
     return true;
-  }else{
+  else
     throw new Error("No results available!");
-  }
 };
 
 // Delete user account
 export const deleteUser = async (username) => {
   
   const data = await User.deleteOne({username: username.toString()});
-  if (data.deletedCount > 0){
-    logWarning(`Account of '${username}' deleted`);
+  if (data.deletedCount > 0)
     return true;
-  }else{
+  else
     throw new Error("Invalid user!");
-  }
 };

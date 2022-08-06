@@ -8,7 +8,7 @@ import crypto from 'crypto';
 import multer from 'multer';
 import {fileTypeFromFile} from 'file-type';
 import User, * as model from '../models/user.js';
-
+import {logStatus, logWarning, logError} from '../models/event-log.js';
 
 // Configure multer for user avatar upload
 
@@ -47,13 +47,16 @@ export const registerUser = (req, res) => {
     try{      
       // Validate file contents.
       let fileType = await fileTypeFromFile(req.file.path);
-      if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg'))
+      if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg')){
+        logWarning(`Possible profile image type spoofing by ${req.socket.remoteAddress}`);
         throw new Error("Only PNG and JPEG files are allowed!");
+      }
       // Create the user.
       let {username, password, name} = req.body;
       if (!(username && password && name))
         return new Error("Required params not defined!");
       await model.createUser(username, password, name, req.file.path);
+      logStatus(`User account created: 'username'`);
       return res.json({success: "Account created successfully!"});
     }catch(error){
       fs.unlink(req.file.path, () => {}); // Delete the uploaded avatar
@@ -71,6 +74,7 @@ export const loginUser = (req, res) => {
   model.loginUser(username, password).then(user => {
     user.password = undefined;
     model.setupSession(req.session, user);
+    logStatus(`Successful login by user '${user.username}'`);
     return res.json(user);
   }).catch(error => {
     return res.status(403).json({error: error.message});
@@ -111,6 +115,7 @@ export const grantAdmin = (req, res) => {
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
   model.toggleAdmin(req.params.username, true).then(() => {
+    logWarning(`Admin privileges granted to '${req.params.username}' by '${req.session.username}'`);
     return res.json({success: "Privileges granted!"});
   }).catch(error => {
     return res.status(403).json({error: error.message});
@@ -123,6 +128,7 @@ export const revokeAdmin = (req, res) => {
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
   model.toggleAdmin(req.params.username, false).then(() => {
+    logWarning(`Admin privileges revoked from '${req.params.username}' by '${req.session.username}'`);
     return res.json({success: "Privileges revoked!"});
   }).catch(error => {
     return res.status(403).json({error: error.message});
@@ -135,6 +141,7 @@ export const wipeResults = (req, res) => {
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
   model.wipeResults(req.params.username).then(() => {
+    logWarning(`Test results for '${req.params.username}' wiped by '${req.session.username}'`);
     return res.json({success: "Results wiped!"});
   }).catch(error => {
     return res.status(403).json({error: error.message});
@@ -147,8 +154,9 @@ export const deleteUser = (req, res) => {
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
   model.deleteUser(req.params.username).then(() => {
+    logWarning(`User account for '${req.params.username}' deleted by '${req.session.username}'`);
     return res.json({success: "User deleted!"});
   }).catch(error => {
     return res.status(403).json({error: error.message});
   })
-}
+};

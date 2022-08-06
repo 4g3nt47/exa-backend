@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import multer from 'multer';
 import {fileTypeFromFile} from 'file-type';
 import * as model from '../models/course.js';
+import {logStatus, logWarning, logError} from '../models/event-log.js';
 
 const MAX_AVATAR_SIZE = parseInt(process.env.MAX_AVATAR_SIZE) || 500000;
 
@@ -51,11 +52,14 @@ export const createCourse = (req, res) => {
     // Validate file by contents.
     try{      
       let fileType = await fileTypeFromFile(req.file.path);
-      if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg')) // File type not allowed
+      if ((!fileType) || (fileType.mime !== 'image/png' && fileType.mime !== 'image/jpeg')){ // File type not allowed
+        logWarning(`Possible course image type spoofing by '${req.session.username}'`);
         throw new Error("Only PNG and JPEG files are allowed!");
+      }
       // All good. Attempt to create the course.
       req.body.avatar = req.file.path;
-      await model.createCourse(req.body)
+      await model.createCourse(req.body);
+      logStatus(`Course '${req.body.name.toString()}' created by '${req.session.username}'`);
       return res.json({success: "Course created successfully!"});
     }catch(error){
       fs.unlink(req.file.path, () => {}); // Delete the avatar
@@ -94,6 +98,7 @@ export const deleteCourse = (req, res) => {
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
   model.deleteCourse(req.params.id).then(() => {
+    logWarning(`Course '${req.params.id}' deleted by '${req.session.username}'`);
     return res.json({success: "Course deleted!"});
   }).catch(error => {
     return res.status(403).json({error: error.message});
@@ -106,6 +111,7 @@ export const deleteCourseResults = (req, res) => {
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
   model.deleteCourseResults(req.params.id).then(() => {
+    logWarning(`Results for course '${req.params.id}' deleted by '${req.session.username}'`);
     return res.json({success: "Results deleted!"});
   }).catch(error => {
     return res.status(403).json({error: error.message});
@@ -120,6 +126,7 @@ export const startCourse = (req, res) => {
   if (!(req.body.id))
     return res.status(403).json({error: "Required parameters not defined!"});
   model.startCourse(req.session.user, req.body.id, req.body.password).then(course => {
+    logStatus(`Course '${course.id}' started by user '${req.session.username}'`);
     return res.json(course);
   }).catch(error => {
     return res.status(403).json({error: error.message});
@@ -144,6 +151,7 @@ export const exportResults = (req, res) => {
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
   model.exportResults(req.params.id).then(outfile => {
+    logStatus(`Results for course '${req.params.id}' exported by '${req.session.username}'`);
     return res.json({
       success: "Results exported!",
       location: outfile
@@ -159,6 +167,7 @@ export const exportQuestions = (req, res) => {
   if (req.session.admin !== true)
     return res.status(403).json({error: "Permission denied!"});
   model.exportQuestions(req.params.id).then(outfile => {
+    logStatus(`Questions for course '${req.params.id}' exported by '${req.session.username}'`);
     return res.json({
       success: "Questions exported!",
       location: outfile

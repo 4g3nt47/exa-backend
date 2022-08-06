@@ -3,10 +3,12 @@
 import fs from 'fs';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
+import validator from 'validator';
 import excel from 'excel4node';
 import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
 import Result from './result.js';
+import {logStatus, logError, logWarning} from './event-log.js';
 
 // Define the course schema
 const courseSchema = mongoose.Schema({
@@ -122,8 +124,10 @@ export const createCourse = async (data) => {
   passingScore = parseInt(passingScore);
   duration = parseInt(duration);
   password = password.toString().trim();
-  if (name.length < 3 || name.length > 30)
-    throw new Error("Invalid course name");
+  if (name.length < 3 || name.length > 16)
+    throw new Error("Couse name must be between 3 and 16 characters long!");
+  if (!validator.isAlphanumeric(name))
+    throw new Error("Course name must be alphanumeric only!");
   if (await Course.findOne({name}))
     throw new Error("Course with the given name already exists!");
   if (title.length < 5 || title.length > 100)
@@ -295,8 +299,10 @@ export const updateAnswers = async (user, body) => {
     // Validate the ID and make sure it matches one of the questions selected for the current test.
     if (!validIDs.includes(qid)){
       // This is very likely a cheating attempt.
-      // Event should be logged and test invalidated.
-      throw new Error("Question with an invalid ID detected!");
+      // Event should be logged and test terminated.
+      logWarning(`Possible cheating attempt by user '${user.username}' on course '${course.courseID}': Submission of questions with invalid or out of scope IDs`);
+      await finishTest(user, course);
+      throw new Error("Invalid question ID. Test terminated!");
     }
     newQuestions[qid] = q;
   }
@@ -375,6 +381,7 @@ const finishTest = async (user, activeTest) => {
       break;
     }
   }
+  logStatus(`User '${user.username}' finished test on course '${course.name}'`);
   // Finally, save the user's profile
   return (await user.save());
 };
@@ -402,6 +409,14 @@ export const exportResults = async (courseID) => {
     }
   });
   let colNames = ["S/N", "USERNAME", "NAME", "CORRECT ANSWERS", "WRONG ANSWERS", "SCORE (%)", "REMARK", "DURATION (minutes)", "DATE"];
+  worksheet.column(2).setWidth(20);
+  worksheet.column(3).setWidth(30);
+  worksheet.column(4).setWidth(20);
+  worksheet.column(5).setWidth(20);
+  worksheet.column(6).setWidth(20);
+  worksheet.column(7).setWidth(20);
+  worksheet.column(8).setWidth(20);
+  worksheet.column(9).setWidth(30);  
   for (let i = 0; i < colNames.length; i++)
     worksheet.cell(1, i + 1).string(colNames[i]).style(colsStyle);
   for (let i = 0; i < results.length; i++){
