@@ -1,5 +1,9 @@
-// Controllers for the course endpoints.
+/**
+ * @file Controllers for the course API endpoints.
+ * @author Umar Abdul (https://github.com/4g3nt47)
+ */
 
+// Imports
 import dotenv from 'dotenv';
 dotenv.config();
 import fs from 'fs';
@@ -36,7 +40,11 @@ const uploader = multer({
 }).single('file');
 
 
-// Create course.
+/**
+ * Create a course.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const createCourse = (req, res) => {
 
   if (req.session.admin !== true)
@@ -68,7 +76,11 @@ export const createCourse = (req, res) => {
   });
 };
 
-// For getting data of a single course.
+/**
+ * Obtain the data of a single course.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const getCourse = (req, res) => {
 
   if (req.session.loggedIn !== true)
@@ -80,7 +92,11 @@ export const getCourse = (req, res) => {
   });
 };
 
-// Get some data on all available courses.
+/**
+ * Get some data on all available courses.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const getCourseList = (req, res) => {
 
   if (req.session.loggedIn !== true)
@@ -92,7 +108,11 @@ export const getCourseList = (req, res) => {
   });
 };
 
-// Delete a course.
+/**
+ * Delete a course.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const deleteCourse = (req, res) => {
   
   if (req.session.admin !== true)
@@ -105,7 +125,11 @@ export const deleteCourse = (req, res) => {
   });
 };
 
-// Delete all the results for a course.
+/**
+ * Delete all results data for a single course
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const deleteCourseResults = (req, res) => {
 
   if (req.session.admin !== true)
@@ -118,7 +142,11 @@ export const deleteCourseResults = (req, res) => {
   });
 };
 
-// Start a course test
+/**
+ * Start or resume a course/test.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const startCourse = (req, res) => {
   
   if (req.session.loggedIn !== true)
@@ -133,7 +161,11 @@ export const startCourse = (req, res) => {
   });
 };
 
-// Update answers for an active test.
+/**
+ * For updating/submitting the answers of an ongoing test.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const updateAnswers = (req, res) => {
 
   if (req.session.loggedIn !== true)
@@ -145,7 +177,11 @@ export const updateAnswers = (req, res) => {
   });
 };
 
-// For exporting results.
+/**
+ * Export course results for download.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const exportResults = (req, res) => {
 
   if (req.session.admin !== true)
@@ -161,7 +197,11 @@ export const exportResults = (req, res) => {
   });
 };
 
-// For exporting questions.
+/**
+ * Export all the questions defined for a given course for download.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const exportQuestions = (req, res) => {
 
   if (req.session.admin !== true)

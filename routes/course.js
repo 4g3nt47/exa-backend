@@ -1,4 +1,7 @@
-// API routes for course-related actions.
+/**
+ * @file The routes for the course API endpoints.
+ * @author Umar Abdul (https://github.com/4g3nt47)
+ */
 
 import {Router} from 'express';
 const router = Router();

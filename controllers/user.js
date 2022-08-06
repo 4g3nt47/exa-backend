@@ -1,4 +1,7 @@
-// Controllers for the user endpoints.
+/**
+ * @file Controllers for the user endpoint.
+ * @author Umar Abdul (https://github.com/4g3nt47)
+ */
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -35,6 +38,11 @@ const uploader = multer({
   }
 }).single('file');
 
+/**
+ * Create a user account
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const registerUser = (req, res) => {
   
   uploader(req, res, async (err) => {
@@ -65,7 +73,11 @@ export const registerUser = (req, res) => {
   });
 };
 
-// Handles user authentication.
+/**
+ * Login a user.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const loginUser = (req, res) => {
 
   let {username, password} = req.body;
@@ -81,7 +93,11 @@ export const loginUser = (req, res) => {
   });
 };
 
-// Returns the profile data of the logged in user, or a specified user when request is by an admin.
+/**
+ * Returns the profile data of the logged in user, or a specified user when request is by an admin. 
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const getProfile = (req, res) => {
 
   if (req.session.loggedIn !== true)
@@ -109,7 +125,11 @@ export const getProfile = (req, res) => {
   }
 };
 
-// Grant admin perms to a user
+/**
+ * Grant admin privileges to a user.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const grantAdmin = (req, res) => {
   
   if (req.session.admin !== true)
@@ -122,7 +142,11 @@ export const grantAdmin = (req, res) => {
   });
 };
 
-// Revoke admin perms to a user
+/**
+ * Revoke admin privileges of a user.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const revokeAdmin = (req, res) => {
   
   if (req.session.admin !== true)
@@ -135,7 +159,11 @@ export const revokeAdmin = (req, res) => {
   });
 };
 
-// Wipe results of a user
+/**
+ * Delete all the results for a given course.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const wipeResults = (req, res) => {
   
   if (req.session.admin !== true)
@@ -148,7 +176,11 @@ export const wipeResults = (req, res) => {
   });
 };
 
-// Delete user account
+/**
+ * Delete the account of a user.
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const deleteUser = (req, res) => {
 
   if (req.session.admin !== true)
@@ -158,5 +190,5 @@ export const deleteUser = (req, res) => {
     return res.json({success: "User deleted!"});
   }).catch(error => {
     return res.status(403).json({error: error.message});
-  })
+  });
 };

@@ -1,4 +1,7 @@
-// The course model.
+/**
+ * @file Models for the course API endpoints.
+ * @author Umar Abdul (https://github.com/4g3nt47)
+ */
 
 import fs from 'fs';
 import crypto from 'crypto';
@@ -10,7 +13,9 @@ const ObjectId = mongoose.Types.ObjectId;
 import Result from './result.js';
 import {logStatus, logError, logWarning} from './event-log.js';
 
-// Define the course schema
+/**
+ * The collection schema for courses.
+ */
 const courseSchema = mongoose.Schema({
   name: {
     type: String,
@@ -73,22 +78,35 @@ const courseSchema = mongoose.Schema({
   }
 });
 
-// For setting course password using bcrypt
+/**
+ * Sets course password.
+ * @param {string} password - The password string.
+ */
 courseSchema.methods.setPassword = async function(password){
   this.password = await bcrypt.hash(password, 10);
 };
 
-// For validating course password
+/**
+ * Validates course password.
+ * @param {string} password - The plain text password to test against
+ * @return {boolean} true on success.
+ */
 courseSchema.methods.validatePassword = async function(password){
   return (await bcrypt.compare(password, this.password));
 };
 
-// Returns true if the course is password-protected.
+/**
+ * Checks if a course is password-protected.
+ * @return {boolean} true if course is password-protected.
+ */
 courseSchema.methods.isProtected = function(){
   return (this.password !== "null");
 };
 
-// Returns a list of random questions that can be used for a test (valid answers not included)
+/**
+ * Builds a random array of questions (answers not included) for a test.
+ * @return {object} An array of questions.
+ */
 courseSchema.methods.getQuestions = function(){
 
   const shuffle = (arr) => {
@@ -107,7 +125,11 @@ courseSchema.methods.getQuestions = function(){
 const Course = mongoose.model('courses', courseSchema);
 export default Course;
 
-// Creates a course with given data.
+/**
+ * Handles course creation.
+ * @param {object} data - The request body containing all the data.
+ * @return {boolean} true on success.
+ */
 export const createCourse = async (data) => {
 
   // Destructure the request body.
@@ -151,7 +173,12 @@ export const createCourse = async (data) => {
   return true;
 };
 
-// Get data for a single course. Questions, answers, and actual password (if any) excluded.
+/**
+ * Get data for a single course.
+ * @param {object} user - The user's profile.
+ * @param {number} id - The course ID.
+ * @return {object} The course data, excluding questions, answers, and actual password (if any).
+ */
 export const getCourse = async (user, id) => {
 
   if (!ObjectId.isValid(id))
@@ -182,7 +209,11 @@ export const getCourse = async (user, id) => {
   return courseData;
 };
 
-// Get data of all courses.
+/**
+ * Get data of all courses.
+ * @param {object} user - The user's profile.
+ * @return {object} An array of all courses.
+ */
 export const getCourseList = async (user) => {
 
   const courses = await Course.find({});
@@ -192,7 +223,11 @@ export const getCourseList = async (user) => {
   return result;
 };
 
-// Delete a course.
+/**
+ * Delete a course.
+ * @param {string} id - The course ID.
+ * @return {object} The result of the delete query.
+ */
 export const deleteCourse = async (id) => {
 
   if (!ObjectId.isValid(id))
@@ -203,7 +238,11 @@ export const deleteCourse = async (id) => {
   return result;
 };
 
-// Delete results for a course.
+/**
+ * Delete all results for a course.
+ * @param {string} id - The course ID.
+ * @return {object} The result of the delete query.
+ */
 export const deleteCourseResults = async (id) => {
 
   if (!ObjectId.isValid(id))
@@ -211,7 +250,11 @@ export const deleteCourseResults = async (id) => {
   return (await Result.deleteMany({courseID: id}));
 };
 
-// Get an active course for the user using the given course ID
+/**
+ * Get an active course for the user using the given course ID.
+ * @param {object} user - The user's profile.
+ * @return {object} The course data, null if not found.
+ */
 const getActiveCourse = (user, courseID) => {
 
   for (let course of user.activeTests){
@@ -221,7 +264,13 @@ const getActiveCourse = (user, courseID) => {
   return null;
 };
 
-// Start a course.
+/**
+ * Start or resume a course.
+ * @param {object} user - The user's profile
+ * @param {string} courseID - The course ID.
+ * @param {string} [password] - The course password (optional).
+ * @return {object} The started course data, including questions and options, but not actual answers.
+ */
 export const startCourse = async (user, courseID, password) => {
 
   if (!ObjectId.isValid(courseID))
@@ -271,7 +320,12 @@ export const startCourse = async (user, courseID, password) => {
   return activeTest;
 };
 
-// Updates the answers of an active test.
+/**
+ * Update the answer(s) of an active test.
+ * @param {object} user - The user's profile.
+ * @param {object} body - The answers data.
+ * @return {object} The updated user profile.
+ */
 export const updateAnswers = async (user, body) => {
 
   let {courseID, data, finished} = body; 
@@ -317,7 +371,12 @@ export const updateAnswers = async (user, body) => {
     return (await user.save());
 };
 
-// Called when a course has being finished. Handles result generation and test cache.
+/**
+ * Submit/finish an active test. Handles result generation and cache cleanup.
+ * @param {object} user - The user's profile.
+ * @param {object} activeTest - The active test data.
+ * @return {object} The updated user profile.
+ */
 const finishTest = async (user, activeTest) => {
 
   // Load the original course data.
@@ -386,7 +445,11 @@ const finishTest = async (user, activeTest) => {
   return (await user.save());
 };
 
-// For exporting results of a course to a .xlsx excel file for download.
+/**
+ * Export results of a course to a .xlsx excel file for download.
+ * @param {string} courseID - The ID of target course.
+ * @return {string} The exported results filename.
+ */
 export const exportResults = async (courseID) => {
 
   if (!ObjectId.isValid(courseID))
@@ -436,7 +499,11 @@ export const exportResults = async (courseID) => {
   return outfile;
 };
 
-// For exporting the questions of a course into a .json file for download.
+/**
+ * Export the questions of a course into a .json file for download.
+ * @param {string} courseID - The target course ID.
+ * @return {string} The exported questions filename.
+ */
 export const exportQuestions = async (courseID) => {
 
   if (!ObjectId.isValid(courseID))

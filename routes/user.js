@@ -1,4 +1,7 @@
-// API routes for user-related actions.
+/**
+ * @file The routes for the user API endpoints.
+ * @author Umar Abdul (https://github.com/4g3nt47)
+ */
 
 import {Router} from 'express';
 import {

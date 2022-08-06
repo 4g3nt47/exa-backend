@@ -1,7 +1,15 @@
-// Controller funcs for the main index.js file
+/**
+ * @file Controllers for handling download of exported files.
+ * @author Umar Abdul (https://github.com/4g3nt47)
+ */
 
 import fs from 'fs';
 
+/**
+ * Download an exported file, which could be course questions (.json) or results data (.xlsx).
+ * @param req - The request object
+ * @param res - The response object
+ */
 export const downloadExport = (req, res) => {
 
   if (req.session.admin !== true)

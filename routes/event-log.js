@@ -1,3 +1,8 @@
+/**
+ * @file The routes for the event logs API endpoints.
+ * @author Umar Abdul (https://github.com/4g3nt47)
+ */
+
 import {Router} from 'express';
 import {getLogs} from '../models/event-log.js';
 

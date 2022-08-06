@@ -1,5 +1,9 @@
-// The entry point of the API
+/**
+ * @file This is the entrypoint of the API.
+ * @author Umar Abdul
+ */
 
+// Imports
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';

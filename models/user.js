@@ -1,4 +1,7 @@
-// The user model.
+/**
+ * @file The user model.
+ * @author Umar Abdul (https://github.com/4g3nt47)
+ */
 
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
@@ -70,16 +73,23 @@ const userSchema = mongoose.Schema({
   ]
 });
 
-// Sets user password using bcrypt
+/**
+ * Set user password.
+ * @param {string} password - The new password in plaintext format.
+ */
 userSchema.methods.setPassword = async function(password){
 
-  // if (!validator.isStrongPassword(password))
-  //   throw new Error("Password too weak!");
+  if (!validator.isStrongPassword(password))
+    throw new Error("Password too weak!");
   this.password = await bcrypt.hash(password, 10);
   return this.password;
 };
 
-// Matches given password with hashed user password.
+/**
+ * Handles password validation.
+ * @param {string} pwd - The password to test against.
+ * @return {boolean} true if it's a match.
+ */
 userSchema.methods.validatePassword = async function(pwd){
   return await bcrypt.compare(pwd, this.password);
 };
@@ -88,7 +98,14 @@ userSchema.methods.validatePassword = async function(pwd){
 const User = mongoose.model('users', userSchema);
 export default User;
 
-// Creates user accounts.
+/**
+ * Create a user account.
+ * @param {string} username - The account username.
+ * @param {string} password - The account password.
+ * @param {string} name - The name of the user.
+ * @param {string} avatar - The path of the user avatar / profile pic.
+ * @return {object} The created user profile.
+ */
 export const createUser = async (username, password, name, avatar) => {
 
   username = username.toString().trim();
@@ -96,8 +113,6 @@ export const createUser = async (username, password, name, avatar) => {
   name = name.toString().trim();
   if (username.length < 3 || username.length > 32)
     throw new Error("Invalid username!");
-  if (!validator.isStrongPassword(password))
-    throw new Error("Password too weak!");
   if (name.length < 3 || name.length > 32)
     throw new Error("Invalid name!");
   const valid = await User.findOne({username});
@@ -115,7 +130,12 @@ export const createUser = async (username, password, name, avatar) => {
   return user;
 };
 
-// Handles login
+/**
+ * Handles user authentication.
+ * @param {string} username - Account username.
+ * @param {string} password - Account password.
+ * @return The user profile.
+ */
 export const loginUser = async (username, password) => {
 
   const error = new Error("Authentication failed!");
@@ -127,7 +147,11 @@ export const loginUser = async (username, password) => {
   return user;
 };
 
-// Setup session for a logged in user.
+/**
+ * Setups session variables for a logged in user.
+ * @param {object} session - The session object (req.session).
+ * @param {object} user - The user's profile.
+ */
 export const setupSession = (session, user) => {
 
   session.username = user.username;
@@ -136,7 +160,11 @@ export const setupSession = (session, user) => {
   session.user = user;
 };
 
-// Build and return profile for the given user data
+/**
+ * Builds the profile of a given user.
+ * @param {object} user - The user's profile.
+ * @return {object} The complete user profile. 
+ */
 export const getProfile = async (user) => {
 
   // Generate course results
@@ -165,7 +193,12 @@ export const getProfile = async (user) => {
   });
 };
 
-// Grant or remove admin perms to a user.
+/**
+ * Grant / revoke admin privileges for a user.
+ * @param {string} username - The target user.
+ * @param {boolean} grant - The action type. true == grant, while false == revoke.
+ * @return {boolean} true on success.
+ */
 export const toggleAdmin = async (username, grant) => {
 
   const data = await User.updateOne({username: username.toString()}, {admin: grant});
@@ -175,7 +208,11 @@ export const toggleAdmin = async (username, grant) => {
     throw new Error("Invalid user!");
 };
 
-// Wipe results for a user
+/**
+ * Wipe the results of a given user.
+ * @param {string} username - The target user.
+ * @return {boolean} true on success.
+ */
 export const wipeResults = async (username) => {
 
   const data = await Result.deleteMany({username: username.toString()});
@@ -185,7 +222,11 @@ export const wipeResults = async (username) => {
     throw new Error("No results available!");
 };
 
-// Delete user account
+/**
+ * Delete the account of a user.
+ * @param {string} username - The target user.
+ * @return {boolean} true on success.
+ */
 export const deleteUser = async (username) => {
   
   const data = await User.deleteOne({username: username.toString()});

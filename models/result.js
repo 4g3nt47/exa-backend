@@ -1,4 +1,7 @@
-// The test results model
+/**
+ * @file The results model.
+ * @author Umar Abdul (https://github.com/4g3nt47)
+ */
 
 import mongoose from 'mongoose';
 const ObjectId = mongoose.Types.ObjectId;
