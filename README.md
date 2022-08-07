@@ -2,7 +2,7 @@
 
 **Exa** is a full stack web application project I made for online tests/exams. This is the backend code for the project written with Node.js, Express.js, and MongoDB.
 
-The front-end code for this application, which was made using Svelte, can be found [here](https://github.com/4g3nt47/exa-backend)
+The front-end code for this application, which was made using Svelte, can be found [here](https://github.com/4g3nt47/exa-frontend)
 
 ## Installation
 
