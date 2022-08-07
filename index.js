@@ -38,18 +38,22 @@ app.use(cors({
 app.use("/static", express.static("./static"));
 
 // Configure the session manager
+
+app.set('trust proxy', 1); // In case of local proxies that use HTTP
+
 app.use(session({
   secret: SECRET,
   resave: true,
   saveUninitialized: false,
   cookie: {
-    sameSite: 'strict',
+    sameSite: 'none',
+    secure: true,
     expires: 1000 * 60 * 60 * 24 * 7
   },
   store: MongoStore.create({
     mongoUrl: DB_URL,
     ttl: 60 * 60 * 24 * 7,
-    crypto:{
+    crypto: {
       secret: SECRET
     }
   })
